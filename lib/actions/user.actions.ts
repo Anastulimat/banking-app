@@ -3,12 +3,12 @@
 import {ID, Query} from "node-appwrite";
 import {createAdminClient, createSessionClient} from "../appwrite";
 import {cookies} from "next/headers";
-import {encryptId, extractCustomerIdFromUrl, parseStringify} from "../utils";
+import {encryptId, parseStringify} from "../utils";
 import {CountryCode, ProcessorTokenCreateRequest, ProcessorTokenCreateRequestProcessorEnum, Products} from "plaid";
 
 import {plaidClient} from '@/lib/plaid';
 import {revalidatePath} from "next/cache";
-import {addFundingSource, createDwollaCustomer} from "./dwolla.actions";
+import {addFundingSource} from "./dwolla.actions";
 
 const {
     APPWRITE_DATABASE_ID: DATABASE_ID,
@@ -108,13 +108,15 @@ export const logoutAccount = async () => {
     }
 }
 
+// ----------------------------------------------------------------------
+
 export const createLinkToken = async (user: User) => {
     try {
         const tokenParams = {
             user: {
                 client_user_id: user.$id
             },
-            client_name: `${user.firstName} ${user.lastName}`,
+            client_name: user.name,
             products: ['auth'] as Products[],
             language: 'en',
             country_codes: ['US'] as CountryCode[],
@@ -159,10 +161,7 @@ export const createBankAccount = async ({
     }
 }
 
-export const exchangePublicToken = async ({
-                                              publicToken,
-                                              user,
-                                          }: exchangePublicTokenProps) => {
+export const exchangePublicToken = async ({publicToken, user}: exchangePublicTokenProps) => {
     try {
         // Exchange public token for access token and item ID
         const response = await plaidClient.itemPublicTokenExchange({
