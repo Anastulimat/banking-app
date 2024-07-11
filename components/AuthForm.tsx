@@ -12,10 +12,14 @@ import {Button} from "@/components/ui/button"
 import {Form,} from "@/components/ui/form"
 import CustomInput from "@/components/CustomInput";
 import {authFormSchema} from "@/lib/utils";
+import {useRouter} from "next/navigation";
+import {signIn, signUp} from "@/lib/actions/user.actions";
 
 // ----------------------------------------------------------------------
 
 const AuthForm = ({type}: { type: string }) => {
+    const router = useRouter();
+
     const [user, setUser] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -32,10 +36,29 @@ const AuthForm = ({type}: { type: string }) => {
     })
 
     // 2. Define a submit handler.
-    function onSubmit(values: z.infer<typeof formSchema>) {
+    const onSubmit = async (data: z.infer<typeof formSchema>) => {
         setIsLoading(true);
-        console.log(values)
-        setIsLoading(false);
+        try {
+            // Sign up with AppWrite & create plaid token
+            if (type === 'sign-up') {
+                const newUser = await signUp(data);
+                console.log(newUser);
+                setUser(newUser);
+            }
+
+            if (type === 'sign-in') {
+                const response = await signIn({
+                    email: data.email,
+                    password: data.password,
+                });
+
+                if (response) router.push('/');
+            }
+        } catch (error) {
+            console.log(error);
+        } finally {
+            setIsLoading(false);
+        }
     }
 
     return (
